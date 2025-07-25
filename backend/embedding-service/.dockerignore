@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pkl
+*.ipynb
+*.log
+*.mkv
+*.mp4
+*.csv
+.git/
+venv/
+.env

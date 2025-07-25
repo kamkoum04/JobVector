@@ -1,0 +1,30 @@
+# === FRONTEND ===
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.turbo/
+frontend/.vercel/
+frontend/package-lock.json
+frontend/pnpm-lock.yaml
+frontend/build/
+
+# === BACKEND (Spring Boot) ===
+backend/target/
+backend/.mvn/
+backend/*.iml
+backend/.*.sw?
+backend/uploads/
+
+# === Common ===
+**/*.log
+.DS_Store
+.env
+.idea/
+.vscode/
+ 
+# Uploads (if not needed in repo)
+uploads/
+
+backend/embedding-service/venv/
+
