@@ -1,17 +1,10 @@
-# ============================================
-# JobVector .gitignore
-# ============================================
-
-# === FRONTEND (Next.js) ===
+# === FRONTEND ===
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.env
-frontend/.env*.local
 frontend/.turbo/
 frontend/.vercel/
-frontend/package-lock.json
-frontend/yarn.lock
 frontend/pnpm-lock.yaml
 frontend/build/
 
@@ -20,67 +13,19 @@ backend/target/
 backend/.mvn/
 backend/*.iml
 backend/.*.sw?
-backend/uploads/cvs/**
-backend/temp/**
+backend/uploads/
 backend/.env
 
-# Keep directory structure
-!backend/uploads/.gitkeep
-!backend/temp/.gitkeep
-
-# === EMBEDDING SERVICE (Python) ===
-embeddingService/__pycache__/
-embeddingService/*.pyc
-embeddingService/venv/
-embeddingService/.venv/
-embeddingService/.env
-
-# === TERRAFORM ===
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/.terraform.lock.hcl
-terraform/terraform.tfvars
-terraform/*.auto.tfvars
-terraform-outputs.txt
-
-# === KUBERNETES ===
-kubernetes/secrets.yaml
-
-# === SECRETS & CREDENTIALS ===
-*.pem
-*.key
-*.crt
-*.p12
-*.jks
-*credentials*.json
-*secret*.yaml
-*secret*.yml
-.kube/config
-kubeconfig*
-aws-credentials*
-
-# === COMMON ===
+# === Common ===
 **/*.log
 .DS_Store
-Thumbs.db
 .env
-.env.local
-.env*.local
 .idea/
-*.iml
-*.swp
-*.swo
-*~
+.vscode/
+ 
+# Uploads (if not needed in repo)
+uploads/
 
-# === UPLOADS ===
-uploads/**
-temp/**
-!uploads/.gitkeep
-!temp/.gitkeep
 
-# === IMPORTANT: DO NOT IGNORE ===
-# ✅ docker-compose.yml - KEEP THIS!
-# ✅ .github/ - KEEP THIS!
-# ✅ *.md files - KEEP THIS!
-# ✅ Dockerfiles - KEEP THIS!
+
+docker-compose.yml
