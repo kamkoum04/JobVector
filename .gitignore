@@ -15,6 +15,7 @@ backend/.mvn/
 backend/*.iml
 backend/.*.sw?
 backend/uploads/
+backend/.env
 
 # === Common ===
 **/*.log
@@ -26,5 +27,6 @@ backend/uploads/
 # Uploads (if not needed in repo)
 uploads/
 
-backend/embedding-service/venv/
 
+
+docker-compose.yml

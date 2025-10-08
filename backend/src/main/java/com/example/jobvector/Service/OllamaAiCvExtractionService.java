@@ -1,8 +1,6 @@
 package com.example.jobvector.Service;
 
 import com.example.jobvector.Dto.CvDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

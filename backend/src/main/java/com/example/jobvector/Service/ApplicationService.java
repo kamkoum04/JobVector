@@ -1,7 +1,7 @@
 package com.example.jobvector.Service;
 
 import com.example.jobvector.Dto.ApplicationDto;
-import com.example.jobvector.Dto.CvDto;
+
 import com.example.jobvector.Model.Application;
 import com.example.jobvector.Model.Cv;
 import com.example.jobvector.Model.JobOffre;
@@ -50,9 +50,8 @@ public class ApplicationService {
     @Autowired
     private CvRepository cvRepository;
     
-    @Autowired
-    private CvService cvService;
-    
+
+
     @Autowired
     private MatchingService matchingService;
     
@@ -461,74 +460,8 @@ public class ApplicationService {
             throw e;
         }
     }
-    
-    /**
-     * Copier le CV pour une candidature spécifique
-     */
-    private String copyCvForApplication(Cv cv, Application application) throws IOException {
-        try {
-            // Construire le chemin absolu du CV original
-            Path originalCvPath;
-            String fichierPath = cv.getFichierPath();
-            
-            if (fichierPath == null || fichierPath.trim().isEmpty()) {
-                throw new IOException("Le chemin du CV est vide ou null");
-            }
-            
-            if (fichierPath.startsWith("/")) {
-                // Chemin absolu
-                originalCvPath = Paths.get(fichierPath);
-            } else {
-                // Chemin relatif - construire le chemin complet
-                originalCvPath = Paths.get(cvDirectory, fichierPath);
-            }
-            
-            logger.info("Tentative de copie du CV: {} vers applications/", originalCvPath);
-            
-            // Vérifier que le CV original existe
-            if (!Files.exists(originalCvPath)) {
-                logger.error("Le CV original n'existe pas: {}", originalCvPath);
-                logger.error("Répertoire CV configuré: {}", cvDirectory);
-                logger.error("Chemin CV dans BD: {}", fichierPath);
-                
-                // Essayer de trouver le fichier dans le répertoire uploads/cvs
-                Path uploadsDir = Paths.get(cvDirectory);
-                if (Files.exists(uploadsDir)) {
-                    logger.info("Contenu du répertoire uploads/cvs:");
-                    Files.list(uploadsDir).forEach(path -> logger.info("  - {}", path.getFileName()));
-                }
-                
-                throw new IOException("Le CV original n'existe pas: " + originalCvPath);
-            }
-            
-            // Créer le répertoire pour les CV des candidatures
-            Path applicationsDir = Paths.get(cvDirectory, "applications");
-            if (!Files.exists(applicationsDir)) {
-                Files.createDirectories(applicationsDir);
-                logger.info("Répertoire applications créé: {}", applicationsDir);
-            }
-            
-            // Nom du fichier: candidat_id + "_" + job_offer_id + "_" + timestamp + ".pdf"
-            String fileName = String.format("%d_%d_%d.pdf", 
-                                           application.getCandidat().getId(),
-                                           application.getJobOffre().getId(),
-                                           System.currentTimeMillis());
-            
-            Path applicationCvPath = applicationsDir.resolve(fileName);
-            
-            // Copier le fichier
-            Files.copy(originalCvPath, applicationCvPath, StandardCopyOption.REPLACE_EXISTING);
-            
-            logger.info("CV copié avec succès de {} vers {}", originalCvPath, applicationCvPath);
-            
-            return applicationCvPath.toString();
-            
-        } catch (IOException e) {
-            logger.error("Erreur lors de la copie du CV pour la candidature: {}", e.getMessage(), e);
-            throw e;
-        }
-    }
-    
+
+
     /**
      * Créer un snapshot des données du CV
      */

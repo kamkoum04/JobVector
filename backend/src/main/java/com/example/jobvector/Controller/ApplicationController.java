@@ -20,7 +20,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class ApplicationController {
     
     private static final Logger logger = LoggerFactory.getLogger(ApplicationController.class);
@@ -216,24 +215,6 @@ public class ApplicationController {
             logger.error("Erreur lors du téléchargement du CV: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Erreur lors du téléchargement du CV");
         }
-    }
-    
-    // ========== ROUTES COMMUNES ==========
-    
-    /**
-     * Statistiques des candidatures (pour tableau de bord)
-     * GET /api/applications/stats
-     */
-    @GetMapping("/applications/stats")
-    public ResponseEntity<ApplicationDto> getApplicationStats() {
-        logger.info("Récupération des statistiques des candidatures");
-        
-        // Cette méthode sera implémentée dans ApplicationService
-        ApplicationDto response = new ApplicationDto();
-        response.setStatusCode(501);
-        response.setMessage("Fonctionnalité de statistiques non encore implémentée");
-        
-        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     
     // ========== CLASSES INTERNES ==========

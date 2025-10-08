@@ -194,11 +194,6 @@ public class CvController {
         }
     }
     
-    @GetMapping("/test")
-    public ResponseEntity<String> testEndpoint() {
-        return ResponseEntity.ok("CV Controller is working!");
-    }
-    
     private Long getUserIdFromEmail(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'email: " + email));
