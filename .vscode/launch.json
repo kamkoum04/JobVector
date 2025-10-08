@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-JobVectorApplication<JobVector>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.jobvector.JobVectorApplication",
+            "projectName": "JobVector",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
