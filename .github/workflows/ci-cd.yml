@@ -91,11 +91,20 @@ jobs:
 
       - name: Install Frontend Dependencies for Tests
         working-directory: frontend
-        run: npm ci --legacy-peer-deps
+        run: |
+          echo "Installing dependencies..."
+          npm ci --legacy-peer-deps
+          echo "Verifying jest installation..."
+          ls -la node_modules/.bin/ | grep jest || echo "Jest binary not found in node_modules/.bin/"
+          echo "Checking package.json..."
+          cat package.json | grep jest || echo "Jest not found in package.json"
 
       - name: Test Frontend
         working-directory: frontend
-        run: npm test
+        run: |
+          echo "Running tests..."
+          npx jest --version
+          npm test
 
   # 📤 PUSH JOB
   push:
