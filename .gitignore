@@ -15,11 +15,12 @@ package.json
 
 # === BACKEND (Spring Boot) ===
 backend/target/
-backend/.mvn/
+backend/.mvn/wrapper/maven-wrapper.jar
 backend/*.iml
 backend/.*.sw?
 backend/uploads/
 backend/.env
+backend/temp
 
 # === Common ===
 **/*.log
