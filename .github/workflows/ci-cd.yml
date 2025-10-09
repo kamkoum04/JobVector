@@ -47,7 +47,7 @@ jobs:
       - name: Build Frontend
         run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
 
       - name: Upload Frontend Artifact
@@ -91,7 +91,7 @@ jobs:
       - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
 
       - name: Test Frontend
         run: |
