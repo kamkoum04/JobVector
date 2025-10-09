@@ -20,7 +20,6 @@ backend/*.iml
 backend/.*.sw?
 backend/uploads/
 backend/.env
-backend/temp
 
 # === Common ===
 **/*.log
