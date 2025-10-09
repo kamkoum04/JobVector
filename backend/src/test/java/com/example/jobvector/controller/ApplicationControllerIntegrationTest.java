@@ -2,13 +2,17 @@ package com.example.jobvector.controller;
 
 import com.example.jobvector.Controller.ApplicationController;
 import com.example.jobvector.Dto.ApplicationDto;
+import com.example.jobvector.Dto.CvDto;
 import com.example.jobvector.Dto.JobOffreDto;
 import com.example.jobvector.Dto.UserDto;
 import com.example.jobvector.Model.Application;
+import com.example.jobvector.Model.Cv;
 import com.example.jobvector.Model.JobOffre;
 import com.example.jobvector.Repository.ApplicationRepository;
 import com.example.jobvector.Repository.JobOfferRepository;
 import com.example.jobvector.Repository.UtilisateurRepository;
+import com.example.jobvector.Service.OllamaAiCvExtractionService;
+import com.example.jobvector.Service.PythonEmbeddingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,6 +30,9 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -49,12 +57,26 @@ class ApplicationControllerIntegrationTest {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
+    @MockBean
+    private OllamaAiCvExtractionService ollamaAiCvExtractionService;
+
+    @MockBean
+    private PythonEmbeddingService pythonEmbeddingService;
+
     private String candidateToken;
     private String employerToken;
     private Long jobOfferId;
 
     @BeforeEach
     void setUp() throws Exception {
+        // Mock external services to avoid dependency on Ollama and Python embedding service
+        CvDto mockCvDto = new CvDto();
+        mockCvDto.setNom("Test");
+        mockCvDto.setPrenom("User");
+        mockCvDto.setEmail("candidate@test.com");
+        when(ollamaAiCvExtractionService.extractCvInformation(anyString())).thenReturn(mockCvDto);
+        when(pythonEmbeddingService.generateCvEmbedding(any(Cv.class))).thenReturn("mock-embedding-vector");
+
         applicationRepository.deleteAll();
         jobOfferRepository.deleteAll();
         utilisateurRepository.deleteAll();
