@@ -94,7 +94,18 @@ jobs:
       - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm ci --legacy-peer-deps
+          if [ ! -d "node_modules" ]; then
+            echo "Installing dependencies..."
+            npm ci --legacy-peer-deps
+          else
+            echo "node_modules already exists"
+          fi
+          
+      - name: Verify Jest Installation
+        run: |
+          cd frontend
+          ls -la node_modules/.bin/jest || echo "Jest binary not found"
+          npm list jest || echo "Jest not in package list"
 
       - name: Test Frontend
         run: |
