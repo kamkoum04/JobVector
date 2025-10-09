@@ -8,6 +8,11 @@ frontend/.vercel/
 frontend/pnpm-lock.yaml
 frontend/build/
 
+# === ROOT NODE_MODULES (should not be pushed) ===
+node_modules/
+package-lock.json
+package.json
+
 # === BACKEND (Spring Boot) ===
 backend/target/
 backend/.mvn/

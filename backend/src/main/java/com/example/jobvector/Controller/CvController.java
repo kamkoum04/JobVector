@@ -27,6 +27,11 @@ public class CvController {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
     
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("CV Controller is working!");
+    }
+    
     @PostMapping("/upload")
     public ResponseEntity<BaseResponseDto> uploadCv(@RequestParam("file") MultipartFile file) {
         try {
