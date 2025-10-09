@@ -84,33 +84,18 @@ jobs:
           ./mvnw test
 
       # Test Frontend
-      - name: Setup Node.js
+      - name: Setup Node.js for Tests
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Frontend Dependencies
-        run: |
-          cd frontend
-          if [ ! -d "node_modules" ]; then
-            echo "Installing dependencies..."
-            npm ci --legacy-peer-deps
-          else
-            echo "node_modules already exists"
-          fi
-          
-      - name: Verify Jest Installation
-        run: |
-          cd frontend
-          ls -la node_modules/.bin/jest || echo "Jest binary not found"
-          npm list jest || echo "Jest not in package list"
+      - name: Install Frontend Dependencies for Tests
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
 
       - name: Test Frontend
-        run: |
-          cd frontend
-          npm test
+        working-directory: frontend
+        run: npm test
 
   # 📤 PUSH JOB
   push:
