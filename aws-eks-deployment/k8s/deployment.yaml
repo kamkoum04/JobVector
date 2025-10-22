@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cv-ai-matcher
+  labels:
+    app: cv-ai-matcher
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cv-ai-matcher
+  template:
+    metadata:
+      labels:
+        app: cv-ai-matcher
+    spec:
+      containers:
+      - name: cv-ai-matcher
+        image: <your-dockerhub-username>/cv-ai-matcher:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://<rds-endpoint>:<rds-port>/<database-name>
+        - name: SPRING_DATASOURCE_USERNAME
+          value: <db-username>
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: <db-password>
+        - name: S3_BUCKET_NAME
+          value: <your-s3-bucket-name>
+        - name: AWS_REGION
+          value: <your-aws-region>
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+      imagePullSecrets:
+      - name: regcred

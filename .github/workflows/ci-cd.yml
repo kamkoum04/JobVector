@@ -108,7 +108,7 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/jobvector-frontend:latest ./frontend
           docker push ${{ secrets.DOCKER_USERNAME }}/jobvector-frontend:latest
 
-      - name: Build and Push Embedding Service
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/jobvector-embeddingservice:latest ./embeddingService
-          docker push ${{ secrets.DOCKER_USERNAME }}/jobvector-embeddingservice:latest
+      # - name: Build and Push Embedding Service
+      #   run: |
+      #     docker build -t ${{ secrets.DOCKER_USERNAME }}/jobvector-embeddingservice:latest ./embeddingService
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/jobvector-embeddingservice:latest
