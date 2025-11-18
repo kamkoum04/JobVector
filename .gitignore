@@ -21,6 +21,19 @@ backend/.*.sw?
 backend/uploads/
 backend/.env
 
+# === TERRAFORM ===
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.tfstate.lock.info
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+
 # === Common ===
 **/*.log
 .DS_Store
@@ -30,7 +43,3 @@ backend/.env
  
 # Uploads (if not needed in repo)
 uploads/
-
-
-
-docker-compose.yml
