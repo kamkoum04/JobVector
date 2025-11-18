@@ -1,21 +1,19 @@
-
-output "db_endpoint" {
+output "endpoint" {
   description = "The connection endpoint for the RDS instance"
-  value       = aws_db_instance.default.endpoint
+  value       = aws_db_instance.jobvector_db.endpoint
 }
 
-output "db_port" {
+output "address" {
+  description = "The address of the RDS instance"
+  value       = aws_db_instance.jobvector_db.address
+}
+
+output "port" {
   description = "The port of the RDS instance"
-  value       = aws_db_instance.default.port
-}
-
-output "db_username" {
-  description = "The master username for the RDS instance"
-  value       = aws_db_instance.default.username
-  sensitive   = true
+  value       = aws_db_instance.jobvector_db.port
 }
 
 output "db_name" {
   description = "The name of the database"
-  value       = aws_db_instance.default.db_name
+  value       = aws_db_instance.jobvector_db.db_name
 }

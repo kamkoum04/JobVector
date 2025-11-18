@@ -19,7 +19,12 @@ resource "aws_s3_bucket_versioning" "cv_upload_bucket" {
   }
 }
 
-resource "aws_s3_bucket_acl" "cv_upload_bucket" {
+# Block public access - modern S3 best practice
+resource "aws_s3_bucket_public_access_block" "cv_upload_bucket" {
   bucket = aws_s3_bucket.cv_upload_bucket.id
-  acl    = var.acl
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }

@@ -1,7 +1,7 @@
 variable "cluster_name" {
   description = "The name of the EKS cluster"
   type        = string
-  default = "job-vecteur-cluster"
+  default     = "job-vecteur-cluster"
 }
 
 variable "node_group_name" {

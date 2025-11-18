@@ -1,19 +1,29 @@
-resource "output" "vpc_id" {
-  value = aws_vpc.main.id
+output "vpc_id" {
+  value       = aws_vpc.main.id
+  description = "VPC ID"
 }
 
-resource "output" "public_subnet_ids" {
-  value = aws_subnet.public.*.id
+output "public_subnet_ids" {
+  value       = aws_subnet.public[*].id
+  description = "Public subnet IDs"
 }
 
-resource "output" "private_subnet_ids" {
-  value = aws_subnet.private.*.id
+output "private_subnet_ids" {
+  value       = aws_subnet.private[*].id
+  description = "Private subnet IDs for EKS"
 }
 
-resource "output" "nat_gateway_id" {
-  value = aws_nat_gateway.main.id
+output "db_subnet_ids" {
+  value       = aws_subnet.database[*].id
+  description = "Database subnet IDs"
 }
 
-resource "output" "route_table_id" {
-  value = aws_route_table.main.id
+output "nat_gateway_ip" {
+  value       = aws_eip.nat.public_ip
+  description = "NAT Gateway public IP"
+}
+
+output "internet_gateway_id" {
+  value       = aws_internet_gateway.main.id
+  description = "Internet Gateway ID"
 }

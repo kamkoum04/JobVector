@@ -39,6 +39,11 @@ variable "db_engine_version" {
   default     = "15"
 }
 
+variable "vpc_id" {
+  description = "The VPC ID where RDS will be deployed."
+  type        = string
+}
+
 variable "vpc_security_group_ids" {
   description = "The VPC security group IDs to associate with the RDS instance."
   type        = list(string)
