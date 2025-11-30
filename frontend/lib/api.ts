@@ -1,21 +1,8 @@
 import axios from "axios"
 
-// Use environment variable for API URL, fallback to relative URL in production
-const getApiBaseUrl = () => {
-  // If running in browser (client-side)
-  if (typeof window !== 'undefined') {
-    // In production (deployed), use /api which goes through ingress
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return '/api'
-    }
-    // Development - use localhost
-    return "http://localhost:8080"
-  }
-  // Server-side rendering in Kubernetes - use internal service name
-  return process.env.NEXT_PUBLIC_API_URL || "http://backend:8080"
-}
-
-const API_BASE_URL = getApiBaseUrl()
+// Always use internal backend service in Kubernetes
+// All API calls happen server-side in Next.js, not from browser
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080"
 
 // Create axios instance
 const api = axios.create({

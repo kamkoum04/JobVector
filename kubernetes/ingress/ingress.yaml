@@ -11,13 +11,6 @@ spec:
   - host: 129.212.211.225.nip.io
     http:
       paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: backend
-            port:
-              number: 8080
       - path: /
         pathType: Prefix
         backend:
