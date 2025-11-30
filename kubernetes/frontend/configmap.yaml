@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: jobvector
+  labels:
+    app: frontend
+data:
+  NEXT_PUBLIC_API_URL: "http://129.212.211.225.nip.io/api"
+  NODE_ENV: "production"

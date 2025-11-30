@@ -38,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll() // Ajouter les routes de test
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll() // Health checks for Kubernetes
+                        .requestMatchers("/actuator/info").permitAll()
 
                         // Routes pour les candidats
                         .requestMatchers("/api/candidate/**").hasAnyAuthority("CANDIDATE")
