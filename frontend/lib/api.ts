@@ -1,8 +1,18 @@
 import axios from "axios"
 
-// Always use internal backend service in Kubernetes
-// All API calls happen server-side in Next.js, not from browser
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080"
+// API base URL configuration
+// - Browser (client-side): uses /api which goes through ingress to backend
+// - Server-side (Next.js SSR): uses internal backend:8080 service
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    // Browser - use /api which goes through ingress
+    return '/api'
+  }
+  // Server-side - use internal service
+  return process.env.NEXT_PUBLIC_API_URL || "http://backend:8080"
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Create axios instance
 const api = axios.create({
