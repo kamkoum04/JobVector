@@ -184,9 +184,11 @@ public class OllamaAiCvExtractionService {
      * Méthode de secours pour nettoyer le JSON
      */
     private String fallbackJsonCleaning(String response) {
-        // Supprimer les balises markdown et le texte d'introduction
+        // Supprimer les balises markdown AVANT de chercher le JSON
+        response = response.replaceAll("```json|```|```", "").trim();
+        
+        // Supprimer le texte d'introduction avant le JSON
         response = response.replaceAll("(?s).*?\\{", "{");
-        response = response.replaceAll("```json|```", "").trim();
         
         // Trouver l'accolade ouvrante la plus à gauche
         int startIndex = response.indexOf("{");
