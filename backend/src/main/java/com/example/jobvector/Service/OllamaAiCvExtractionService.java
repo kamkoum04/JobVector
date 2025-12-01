@@ -235,8 +235,9 @@ public class OllamaAiCvExtractionService {
         
         logger.info("Après suppression markdown. Longueur: {}", response.length());
         
-        // Supprimer les commentaires inline // 
-        response = response.replaceAll("//[^\n]*", "").trim();
+        // Supprimer les commentaires inline // MAIS préserver les URLs (http://, https://)
+        // phi3:mini ajoute parfois des commentaires, mais ne doit pas casser les URLs
+        response = removeInlineComments(response);
         
         logger.info("Après suppression commentaires. Longueur: {}", response.length());
         
@@ -328,6 +329,18 @@ public class OllamaAiCvExtractionService {
         json = json.replaceAll("\\s+", " ");
         
         return json;
+    }
+    
+    /**
+     * Remove inline comments (// ...) while preserving URLs
+     * Matches // only when it's NOT part of http:// or https://
+     */
+    private String removeInlineComments(String json) {
+        // Use negative lookbehind to avoid matching // in URLs
+        // This regex matches // that is NOT preceded by http: or https:
+        // Pattern: Match // but not when preceded by "http:" or "https:"
+        json = json.replaceAll("(?<!https:)(?<!http:)//[^\n]*", "");
+        return json.trim();
     }
     
     /**
