@@ -549,6 +549,7 @@ export default function CreateJobPage() {
                 {/* Technical Skills */}
                 <div>
                   <Label className="block text-sm font-medium text-gray-700 mb-2">Technical Skills *</Label>
+                  <p className="text-sm text-gray-500 mb-2">Add at least one technical skill required for this position</p>
                   <div className="flex gap-2">
                     <Input
                       type="text"
@@ -563,6 +564,9 @@ export default function CreateJobPage() {
                     </Button>
                   </div>
                   {renderSkillTags(formData.competencesTechniques, "technical")}
+                  {!formData.competencesTechniques && (
+                    <p className="text-sm text-red-500 mt-1">Please add at least one technical skill</p>
+                  )}
                 </div>
 
                 {/* Soft Skills */}
