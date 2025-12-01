@@ -211,6 +211,11 @@ public class OllamaAiCvExtractionService {
         
         logger.info("Après suppression markdown. Longueur: {}", response.length());
         
+        // Supprimer les commentaires inline // 
+        response = response.replaceAll("//[^\n]*", "").trim();
+        
+        logger.info("Après suppression commentaires. Longueur: {}", response.length());
+        
         // Trouver l'accolade ouvrante la plus à gauche
         int startIndex = response.indexOf("{");
         if (startIndex == -1) {
