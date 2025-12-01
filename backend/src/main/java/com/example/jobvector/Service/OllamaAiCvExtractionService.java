@@ -245,6 +245,12 @@ public class OllamaAiCvExtractionService {
         
         logger.info("Après suppression trailing commas. Longueur: {}", response.length());
         
+        // Fix multiline string values - replace literal newlines within string values with spaces
+        // This regex finds newlines that are NOT between quotes properly
+        response = fixMultilineStrings(response);
+        
+        logger.info("Après correction multiligne. Longueur: {}", response.length());
+        
         // Flatten nested structures - convert objects and arrays to strings
         response = flattenNestedStructures(response);
         
@@ -307,6 +313,21 @@ public class OllamaAiCvExtractionService {
         }
         
         return balanced.toString();
+    }
+    
+    /**
+     * Fix multiline string values by replacing unescaped newlines with spaces
+     * This handles phi3:mini's tendency to break long URLs or values across lines
+     */
+    private String fixMultilineStrings(String json) {
+        // Simple approach: replace any unescaped newline characters with a space
+        // This works because JSON strings should not contain literal newlines
+        json = json.replace("\r\n", " ").replace("\n", " ").replace("\r", " ");
+        
+        // Also collapse multiple spaces into single space
+        json = json.replaceAll("\\s+", " ");
+        
+        return json;
     }
     
     /**
