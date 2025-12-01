@@ -13,7 +13,7 @@ data:
   EMBEDDING_FALLBACK: "true"
   SPRING_PROFILES_ACTIVE: "embedding"
   OLLAMA_URL: "http://ollama:11434"
-  OLLAMA_MODEL: "llama3"
+  OLLAMA_MODEL: "phi3:mini"
   OLLAMA_TEMP: "0.1"
   OLLAMA_PREDICT: "2000"
   CV_UPLOAD_DIR: "uploads/cvs"

@@ -16,6 +16,13 @@ spec:
       labels:
         app: ollama
     spec:
+      tolerations:
+      - key: "workload"
+        operator: "Equal"
+        value: "ollama"
+        effect: "NoSchedule"
+      nodeSelector:
+        kubernetes.io/hostname: pool-3hz4fjqza-sb452
       containers:
       - name: ollama
         image: ollama/ollama:latest
@@ -27,11 +34,11 @@ spec:
           mountPath: /root/.ollama
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "5Gi"
+            cpu: "2500m"
           limits:
-            memory: "8Gi"
-            cpu: "4000m"
+            memory: "6.5Gi"
+            cpu: "3500m"
         lifecycle:
           postStart:
             exec:
@@ -40,7 +47,7 @@ spec:
               - -c
               - |
                 sleep 10
-                ollama pull llama3 || true
+                ollama pull phi3:mini || true
         livenessProbe:
           httpGet:
             path: /

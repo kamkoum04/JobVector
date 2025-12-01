@@ -15,6 +15,15 @@ spec:
       labels:
         app: frontend
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - pool-3hz4fjqza-sb452
       initContainers:
       - name: wait-for-backend
         image: curlimages/curl:latest

@@ -28,13 +28,31 @@ public class OllamaAiCvExtractionService {
             String prompt = buildExtractionPrompt(texteCV);
             
             logger.info("Envoi du prompt à Ollama pour extraction du CV");
+            logger.info("=== DÉBUT DU PROMPT ===");
+            logger.info(prompt);
+            logger.info("=== FIN DU PROMPT ===");
             
-            String response = chatClient.prompt()
+            // Utiliser un StringBuilder pour accumuler la réponse streamée
+            StringBuilder fullResponse = new StringBuilder();
+            logger.info("=== DÉBUT STREAMING RÉPONSE OLLAMA ===");
+            
+            chatClient.prompt()
                     .user(prompt)
-                    .call()
-                    .content();
+                    .stream()
+                    .content()
+                    .doOnNext(chunk -> {
+                        // Logger chaque chunk reçu
+                        System.out.print(chunk);
+                        System.out.flush();
+                        fullResponse.append(chunk);
+                    })
+                    .doOnComplete(() -> {
+                        logger.info("\n=== FIN STREAMING RÉPONSE OLLAMA ===");
+                    })
+                    .blockLast(); // Attendre la fin du stream
             
-            logger.debug("Réponse reçue d'Ollama (brute): {}", response);
+            String response = fullResponse.toString();
+            logger.info("=== RÉPONSE COMPLÈTE (longueur: {} caractères) ===", response.length());
             
             // Nettoyer et valider la réponse JSON
             String cleanResponse = extractAndCleanJsonResponse(response);
@@ -44,7 +62,9 @@ public class OllamaAiCvExtractionService {
                 throw new RuntimeException("Impossible d'extraire un JSON valide de la réponse");
             }
 
-            logger.info("Réponse nettoyée prête pour le parsing: {}", cleanResponse);
+            logger.info("=== DÉBUT RÉPONSE NETTOYÉE ===");
+            logger.info(cleanResponse);
+            logger.info("=== FIN RÉPONSE NETTOYÉE ===");
             
             // Vérifier que le JSON est valide avant la désérialisation
             if (!isValidJson(cleanResponse)) {
@@ -184,17 +204,24 @@ public class OllamaAiCvExtractionService {
      * Méthode de secours pour nettoyer le JSON
      */
     private String fallbackJsonCleaning(String response) {
-        // Supprimer les balises markdown AVANT de chercher le JSON
-        response = response.replaceAll("```json|```|```", "").trim();
+        logger.info("Début du nettoyage JSON. Longueur originale: {}", response.length());
         
-        // Supprimer le texte d'introduction avant le JSON
-        response = response.replaceAll("(?s).*?\\{", "{");
+        // Supprimer les balises markdown AVANT de chercher le JSON
+        response = response.replaceAll("```json", "").replaceAll("```", "").trim();
+        
+        logger.info("Après suppression markdown. Longueur: {}", response.length());
         
         // Trouver l'accolade ouvrante la plus à gauche
         int startIndex = response.indexOf("{");
         if (startIndex == -1) {
             logger.error("La réponse ne contient pas de JSON valide (aucun '{' trouvé)");
             return "{}";
+        }
+        
+        // Supprimer tout avant la première accolade
+        if (startIndex > 0) {
+            response = response.substring(startIndex);
+            logger.info("Après suppression texte avant {{. Longueur: {}", response.length());
         }
         
         // Trouver l'accolade fermante correspondante

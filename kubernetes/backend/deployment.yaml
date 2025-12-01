@@ -15,7 +15,30 @@ spec:
       labels:
         app: backend
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - pool-3hz4fjqza-sb452
       initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /app/uploads/cvs /app/temp/test-cvs
+          chmod -R 777 /app/uploads /app/temp
+          chown -R 1000:1000 /app/uploads /app/temp
+        volumeMounts:
+        - name: backend-uploads
+          mountPath: /app/uploads
+        - name: backend-temp
+          mountPath: /app/temp
       - name: wait-for-postgres
         image: postgres:15-alpine
         command:
