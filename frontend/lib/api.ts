@@ -1,12 +1,12 @@
 import axios from "axios"
 
 // API base URL configuration
-// - Browser (client-side): uses /api which goes through ingress to backend
+// - Browser (client-side): uses root path which goes through ingress to backend
 // - Server-side (Next.js SSR): uses internal backend:8080 service
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    // Browser - use /api which goes through ingress
-    return '/api'
+    // Browser - use root path (ingress routes /auth and /api to backend)
+    return ''
   }
   // Server-side - use internal service
   return process.env.NEXT_PUBLIC_API_URL || "http://backend:8080"
