@@ -216,6 +216,11 @@ public class OllamaAiCvExtractionService {
         
         logger.info("Après suppression commentaires. Longueur: {}", response.length());
         
+        // Supprimer les virgules avant les accolades fermantes ou crochets fermants (trailing commas)
+        response = response.replaceAll(",\\s*([\\]}])", "$1").trim();
+        
+        logger.info("Après suppression trailing commas. Longueur: {}", response.length());
+        
         // Trouver l'accolade ouvrante la plus à gauche
         int startIndex = response.indexOf("{");
         if (startIndex == -1) {
