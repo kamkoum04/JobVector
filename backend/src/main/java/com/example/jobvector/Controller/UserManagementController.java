@@ -17,17 +17,17 @@ public class UserManagementController {
 
     // ========== ROUTES PUBLIQUES (Visiteurs non connectés) ==========
 
-    @PostMapping("/api/auth/register")
+    @PostMapping("/auth/register")
     public ResponseEntity<UserDto> register(@RequestBody UserDto registrationRequest){
         return ResponseEntity.ok(userManagementService.register(registrationRequest));
     }
 
-    @PostMapping("/api/auth/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<UserDto> login(@RequestBody UserDto loginRequest){
         return ResponseEntity.ok(userManagementService.login(loginRequest));
     }
 
-    @PostMapping("/api/auth/refresh")
+    @PostMapping("/auth/refresh")
     public ResponseEntity<UserDto> refreshToken(@RequestBody UserDto refreshTokenRequest){
         return ResponseEntity.ok(userManagementService.refreshToken(refreshTokenRequest));
     }
