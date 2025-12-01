@@ -137,24 +137,48 @@ public class OllamaAiCvExtractionService {
                    - Indices: "Present", "Now", "En cours", "Actuel", "Current"
 
                 **STRUCTURE JSON - TOUS LES CHAMPS SONT OBLIGATOIRES:**
+                ⚠️ ATTENTION: TOUS les champs doivent être des CHAÎNES DE CARACTÈRES (string) ou des nombres simples (integer). 
+                ⚠️ N'utilisez JAMAIS d'objets imbriqués {} ou de tableaux [] - TOUT doit être en format texte simple.
+                
                 {
                   "nom": "string (nom de famille)",
                   "prenom": "string (prénom)",
                   "email": "string (email ou 'non spécifié')",
                   "telephone": "string (avec indicatif international si possible)",
-                  "adresse": "string (ville, pays au minimum)",
+                  "adresse": "string (ville, pays au minimum - EXEMPLE: 'Paris, France')",
                   "linkedinUrl": "string (URL ou 'non spécifié')",
-                  "competencesTechniques": "string (CE QUE LA PERSONNE SAIT FAIRE)",
-                  "competencesTransversales": "string (soft skills)",
-                  "experienceAnnees": "integer (calculé selon règles précises)",
-                  "langues": "string (langues mentionne ou 'Aucune langue mentionnée')",
+                  "competencesTechniques": "string (CE QUE LA PERSONNE SAIT FAIRE - liste séparée par des virgules)",
+                  "competencesTransversales": "string (soft skills - liste séparée par des virgules)",
+                  "experienceAnnees": integer (calculé selon règles précises - nombre entier uniquement),
+                  "langues": "string (langues mentionnées - liste séparée par des virgules ou 'Aucune langue mentionnée')",
                   "niveauEtude": "AUCUN|BAC|BAC+2|BAC+3|BAC+5|DOCTORAT",
-                  "formations": "string (diplômes et formations suivies)",
-                  "certifications": "string (certifications professionnelles ou 'Aucune certification mentionnée')",
-                  "projets": "string (projets pertinents ou 'Aucun projet spécifique mentionné')",
+                  "formations": "string (diplômes et formations suivies - liste séparée par des virgules)",
+                  "certifications": "string (certifications professionnelles - liste séparée par des virgules ou 'Aucune certification mentionnée')",
+                  "projets": "string (projets pertinents - liste séparée par des virgules ou 'Aucun projet spécifique mentionné')",
                   "pointsForts": "string (réalisations et atouts principaux)",
                   "resumeProfessionnel": "string (synthèse du profil en 2-3 phrases)",
-                  "motsClesGeneres": "string (5-10 mots-clés représentatifs du profil)"
+                  "motsClesGeneres": "string (5-10 mots-clés représentatifs du profil - liste séparée par des virgules)"
+                }
+
+                **EXEMPLE DE RÉPONSE VALIDE:**
+                {
+                  "nom": "Dupont",
+                  "prenom": "Jean",
+                  "email": "jean.dupont@email.com",
+                  "telephone": "+33612345678",
+                  "adresse": "Paris, France",
+                  "linkedinUrl": "https://linkedin.com/in/jeandupont",
+                  "competencesTechniques": "Développement web, Gestion de projet, Architecture logicielle",
+                  "competencesTransversales": "Communication, Travail d'équipe, Leadership",
+                  "experienceAnnees": 5,
+                  "langues": "Français (natif), Anglais (courant), Espagnol (intermédiaire)",
+                  "niveauEtude": "BAC+5",
+                  "formations": "Master en Informatique, Licence en Mathématiques",
+                  "certifications": "AWS Certified Solutions Architect, PMP",
+                  "projets": "Site e-commerce pour entreprise X, Application mobile pour startup Y",
+                  "pointsForts": "Expert en architecture microservices, Expérience en gestion d'équipe de 10 personnes",
+                  "resumeProfessionnel": "Ingénieur logiciel passionné avec 5 ans d'expérience en développement full-stack et architecture cloud.",
+                  "motsClesGeneres": "Développement web, Cloud, Architecture, Gestion de projet, Leadership"
                 }
 
                 **DISTINCTION ESSENTIELLE:**
@@ -221,6 +245,11 @@ public class OllamaAiCvExtractionService {
         
         logger.info("Après suppression trailing commas. Longueur: {}", response.length());
         
+        // Flatten nested structures - convert objects and arrays to strings
+        response = flattenNestedStructures(response);
+        
+        logger.info("Après aplatissement structures. Longueur: {}", response.length());
+        
         // Trouver l'accolade ouvrante la plus à gauche
         int startIndex = response.indexOf("{");
         if (startIndex == -1) {
@@ -278,6 +307,81 @@ public class OllamaAiCvExtractionService {
         }
         
         return balanced.toString();
+    }
+    
+    /**
+     * Flatten nested structures (objects and arrays) into strings
+     * This handles phi3:mini's tendency to return structured data instead of strings
+     */
+    private String flattenNestedStructures(String json) {
+        try {
+            // Parse the JSON
+            com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(json);
+            
+            if (!rootNode.isObject()) {
+                return json; // Not an object, return as-is
+            }
+            
+            // Convert to Map for easier manipulation
+            java.util.Map<String, Object> resultMap = new java.util.LinkedHashMap<>();
+            
+            rootNode.fields().forEachRemaining(entry -> {
+                String key = entry.getKey();
+                com.fasterxml.jackson.databind.JsonNode value = entry.getValue();
+                
+                if (value.isObject()) {
+                    // Convert object to string (e.g., {"ville": "Ariana", "pays": "Tunisie"} -> "Ariana, Tunisie")
+                    java.util.List<String> parts = new java.util.ArrayList<>();
+                    value.fields().forEachRemaining(field -> {
+                        if (field.getValue().isTextual()) {
+                            parts.add(field.getValue().asText());
+                        } else {
+                            parts.add(field.getValue().toString());
+                        }
+                    });
+                    resultMap.put(key, String.join(", ", parts));
+                } else if (value.isArray()) {
+                    // Convert array to comma-separated string
+                    java.util.List<String> items = new java.util.ArrayList<>();
+                    value.forEach(item -> {
+                        if (item.isTextual()) {
+                            items.add(item.asText());
+                        } else if (item.isObject()) {
+                            // For array of objects, extract values
+                            java.util.List<String> objParts = new java.util.ArrayList<>();
+                            item.fields().forEachRemaining(field -> {
+                                if (field.getValue().isTextual()) {
+                                    objParts.add(field.getValue().asText());
+                                }
+                            });
+                            items.add(String.join(" - ", objParts));
+                        } else {
+                            items.add(item.toString());
+                        }
+                    });
+                    resultMap.put(key, String.join(", ", items));
+                } else if (value.isNumber()) {
+                    // Handle numbers - check if it's experienceAnnees
+                    if ("experienceAnnees".equals(key)) {
+                        resultMap.put(key, value.asInt());
+                    } else {
+                        resultMap.put(key, value.asText());
+                    }
+                } else if (value.isTextual()) {
+                    resultMap.put(key, value.asText());
+                } else if (value.isNull()) {
+                    resultMap.put(key, "");
+                } else {
+                    resultMap.put(key, value.toString());
+                }
+            });
+            
+            // Convert back to JSON
+            return objectMapper.writeValueAsString(resultMap);
+        } catch (Exception e) {
+            logger.warn("Erreur lors de l'aplatissement des structures: {}", e.getMessage());
+            return json; // Return original if flattening fails
+        }
     }
     
     /**
