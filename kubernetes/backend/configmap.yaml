@@ -6,7 +6,7 @@ metadata:
   labels:
     app: backend
 data:
-  DB_URL: "jdbc:postgresql://postgres:5432/mydb"
+  DB_URL: "jdbc:postgresql://jobvector-db.cjuy2asg2xaj.eu-west-3.rds.amazonaws.com:5432/jobvector"
   DB_USERNAME: "hamza"
   EMBEDDING_SERVICE_URL: "http://embeddingservice:5002"
   USE_PYTHON_SERVICE: "true"

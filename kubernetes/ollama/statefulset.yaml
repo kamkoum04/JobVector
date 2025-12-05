@@ -22,7 +22,7 @@ spec:
         value: "ollama"
         effect: "NoSchedule"
       nodeSelector:
-        kubernetes.io/hostname: pool-3hz4fjqza-sb452
+        kubernetes.io/hostname: ip-10-0-10-97.eu-west-3.compute.internal
       containers:
       - name: ollama
         image: ollama/ollama:latest
@@ -34,11 +34,11 @@ spec:
           mountPath: /root/.ollama
         resources:
           requests:
-            memory: "5Gi"
-            cpu: "2500m"
+            memory: "4Gi"
+            cpu: "1200m"
           limits:
-            memory: "6.5Gi"
-            cpu: "3500m"
+            memory: "6Gi"
+            cpu: "1800m"
         lifecycle:
           postStart:
             exec:
@@ -54,18 +54,20 @@ spec:
             port: 11434
           initialDelaySeconds: 60
           periodSeconds: 10
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /
             port: 11434
           initialDelaySeconds: 30
           periodSeconds: 5
+          failureThreshold: 3
   volumeClaimTemplates:
   - metadata:
       name: ollama-data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: do-block-storage
+      storageClassName: gp2
       resources:
         requests:
           storage: 10Gi

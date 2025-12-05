@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# JobVector Kubernetes Cleanup Script
+# JobVector Kubernetes Cleanup Script - AWS EKS
 
 set -e
 
@@ -18,16 +18,18 @@ print_info() {
 }
 
 echo "=========================================="
-echo "JobVector Kubernetes Cleanup"
+echo "JobVector Kubernetes Cleanup - AWS EKS"
 echo "=========================================="
 echo ""
 
 print_warning "This will delete ALL JobVector resources from Kubernetes!"
 print_warning "This includes:"
 echo "  - All deployments and pods"
-echo "  - All services"
+echo "  - All services and LoadBalancers"
 echo "  - All persistent volumes and data"
 echo "  - The entire jobvector namespace"
+echo ""
+print_info "Note: AWS RDS database will NOT be deleted (managed separately)"
 echo ""
 
 read -p "Are you sure you want to continue? (yes/no) " -r

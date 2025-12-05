@@ -15,15 +15,6 @@ spec:
       labels:
         app: embeddingservice
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                - pool-3hz4fjqza-sb452
       containers:
       - name: embeddingservice
         image: kamkoum04/jobvector-embeddingservice:latest

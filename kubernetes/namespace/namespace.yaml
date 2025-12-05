@@ -3,5 +3,4 @@ kind: Namespace
 metadata:
   name: jobvector
   labels:
-    app: jobvector
-    environment: production
+    name: jobvector

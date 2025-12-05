@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# JobVector Kubernetes Deployment Script
+# JobVector Kubernetes Deployment Script - AWS EKS
 # This script deploys all components in the correct order
+# Note: PostgreSQL runs on AWS RDS, not in the cluster
 
 set -e
 
 echo "=========================================="
-echo "JobVector Kubernetes Deployment"
+echo "JobVector Kubernetes Deployment (AWS EKS)"
 echo "=========================================="
 echo ""
 
@@ -49,11 +50,8 @@ print_info "Creating namespace..."
 kubectl apply -f namespace/
 sleep 2
 
-# Deploy PostgreSQL
-print_info "Deploying PostgreSQL StatefulSet..."
-kubectl apply -f postgres/
-print_info "Waiting for PostgreSQL to be ready (this may take a minute)..."
-kubectl wait --for=condition=ready pod -l app=postgres -n jobvector --timeout=120s || print_warning "PostgreSQL pods may still be initializing"
+# Note: PostgreSQL is running on AWS RDS - no deployment needed
+print_info "Using AWS RDS PostgreSQL database (no cluster deployment needed)"
 echo ""
 
 # Deploy Embedding Service
@@ -84,15 +82,6 @@ print_info "Waiting for Frontend to be ready..."
 kubectl wait --for=condition=ready pod -l app=frontend -n jobvector --timeout=120s || print_warning "Frontend pods may still be initializing"
 echo ""
 
-# Optional: Deploy Ingress
-read -p "Do you want to deploy Ingress? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_info "Deploying Ingress..."
-    kubectl apply -f ingress/
-    echo ""
-fi
-
 echo ""
 print_info "Deployment completed!"
 echo ""
@@ -106,22 +95,32 @@ kubectl get pvc -n jobvector
 
 echo ""
 echo "=========================================="
-echo "Deployment Summary"
+echo "Deployment Summary - AWS EKS"
 echo "=========================================="
 echo ""
 echo "To access the application:"
 echo ""
-echo "1. Port-forward to frontend:"
-echo "   kubectl port-forward svc/frontend 3000:3000 -n jobvector"
-echo "   Then open: http://localhost:3000"
+echo "1. Get Frontend LoadBalancer URL:"
+echo "   kubectl get svc frontend -n jobvector"
+echo "   Access via the EXTERNAL-IP shown"
 echo ""
-echo "2. Port-forward to backend:"
+echo "2. Get Backend LoadBalancer URL:"
+echo "   kubectl get svc backend -n jobvector"
+echo "   Backend API: http://<EXTERNAL-IP>:8080/actuator/health"
+echo ""
+echo "Alternative - Port-forward:"
+echo "   kubectl port-forward svc/frontend 3000:80 -n jobvector"
 echo "   kubectl port-forward svc/backend 8080:8080 -n jobvector"
-echo "   Then open: http://localhost:8080/actuator/health"
 echo ""
 echo "To view logs:"
 echo "   kubectl logs -f deployment/backend -n jobvector"
 echo "   kubectl logs -f deployment/frontend -n jobvector"
+echo "   kubectl logs -f deployment/embeddingservice -n jobvector"
+echo "   kubectl logs -f statefulset/ollama -n jobvector"
+echo ""
+echo "Database:"
+echo "   Using AWS RDS PostgreSQL"
+echo "   Endpoint: jobvector-db.cjuy2asg2xaj.eu-west-3.rds.amazonaws.com:5432"
 echo ""
 echo "To delete deployment:"
 echo "   kubectl delete namespace jobvector"

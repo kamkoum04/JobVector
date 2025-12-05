@@ -3,8 +3,6 @@ kind: ConfigMap
 metadata:
   name: frontend-config
   namespace: jobvector
-  labels:
-    app: frontend
 data:
-  NEXT_PUBLIC_API_URL: "http://backend:8080"
-  NODE_ENV: "production"
+  NEXT_PUBLIC_API_URL: "http://13.36.193.241/api"
+  NEXT_PUBLIC_AUTH_URL: "http://13.36.193.241/auth"

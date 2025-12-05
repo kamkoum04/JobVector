@@ -1,37 +1,64 @@
-# JobVector Kubernetes Deployment
+# JobVector Kubernetes Deployment - AWS EKS
 
-This directory contains Kubernetes manifests for deploying the JobVector application.
+This directory contains Kubernetes manifests for deploying the JobVector application on AWS EKS.
 
 ## Directory Structure
 
 ```
 kubernetes/
 ├── namespace/          # Namespace configuration
-├── postgres/           # PostgreSQL StatefulSet, Service, PVC
 ├── embedding-service/  # Embedding Service Deployment, Service
 ├── ollama/            # Ollama StatefulSet, Service
 ├── backend/           # Backend Deployment, Service, ConfigMap, Secret, PVCs
 ├── frontend/          # Frontend Deployment, Service, ConfigMap
-└── ingress/           # Ingress configuration (optional)
+├── deploy.sh          # Automated deployment script
+└── cleanup.sh         # Cleanup script
 ```
 
 ## Prerequisites
 
-- Kubernetes cluster (v1.24+)
-- kubectl configured
-- StorageClass named `standard` available
-- (Optional) NGINX Ingress Controller for Ingress
+- AWS EKS cluster (Kubernetes v1.24+)
+- kubectl configured for EKS cluster
+- AWS RDS PostgreSQL database running
+- StorageClass `gp2` available (default on EKS)
+- AWS LoadBalancer Controller installed on EKS cluster
+
+## Architecture
+
+### Managed Services (AWS)
+- **Database**: AWS RDS PostgreSQL (`jobvector-db.cjuy2asg2xaj.eu-west-3.rds.amazonaws.com`)
+- **Load Balancer**: AWS Application/Network Load Balancer (provisioned automatically)
+- **Storage**: AWS EBS volumes via gp2 StorageClass
+
+### In-Cluster Components
+- **Backend**: Spring Boot application (Java 21)
+- **Frontend**: Next.js application
+- **Embedding Service**: Python FastAPI service
+- **Ollama**: LLM inference service (StatefulSet)
 
 ## Quick Start
 
-### 1. Deploy All Components
+### 1. Automated Deployment
+
+```bash
+# Deploy all components in correct order
+./deploy.sh
+```
+
+The script will:
+1. Create namespace
+2. Deploy Embedding Service
+3. Deploy Ollama StatefulSet
+4. Deploy Backend with init containers
+5. Deploy Frontend
+6. Wait for all pods to be ready
+7. Display access information
+
+### 2. Manual Deployment
 
 ```bash
 # Create namespace
 kubectl apply -f namespace/
-
-# Deploy PostgreSQL
-kubectl apply -f postgres/
 
 # Deploy Embedding Service
 kubectl apply -f embedding-service/
@@ -44,15 +71,6 @@ kubectl apply -f backend/
 
 # Deploy Frontend
 kubectl apply -f frontend/
-
-# (Optional) Deploy Ingress
-kubectl apply -f ingress/
-```
-
-### 2. Deploy in One Command
-
-```bash
-kubectl apply -f namespace/ -f postgres/ -f embedding-service/ -f ollama/ -f backend/ -f frontend/
 ```
 
 ## Verify Deployment
@@ -69,6 +87,9 @@ kubectl get statefulset -n jobvector
 
 # Check pods status
 kubectl get pods -n jobvector -w
+
+# Get LoadBalancer URLs
+kubectl get svc -n jobvector
 ```
 
 ## View Logs
@@ -80,9 +101,6 @@ kubectl logs -f deployment/backend -n jobvector
 # Frontend logs
 kubectl logs -f deployment/frontend -n jobvector
 
-# PostgreSQL logs
-kubectl logs -f statefulset/postgres -n jobvector
-
 # Ollama logs
 kubectl logs -f statefulset/ollama -n jobvector
 
@@ -92,35 +110,26 @@ kubectl logs -f deployment/embeddingservice -n jobvector
 
 ## Access Application
 
-### Using Port-Forward
+### Via AWS Load Balancer (Production)
 
 ```bash
-# Access frontend
-kubectl port-forward svc/frontend 3000:3000 -n jobvector
-# Open: http://localhost:3000
+# Get Frontend LoadBalancer URL
+kubectl get svc frontend -n jobvector
+# Access via EXTERNAL-IP (AWS LoadBalancer DNS)
 
 # Access backend API
-kubectl port-forward svc/backend 8080:8080 -n jobvector
-# Open: http://localhost:8080/actuator/health
+kubectl get svc backend -n jobvector
+# Access via EXTERNAL-IP:8080/actuator/health
 ```
 
-### Using LoadBalancer (if available)
+### Via Port-Forward (Development)
 
 ```bash
-# Get external IP
-kubectl get svc frontend -n jobvector
+# Access frontend locally
+kubectl port-forward svc/frontend 3000:80 -n jobvector
+# Open: http://localhost:3000
 
-# Access using the EXTERNAL-IP shown
-```
-
-### Using Ingress (if deployed)
-
-Add to `/etc/hosts`:
-```
-<INGRESS-IP> jobvector.local
-```
-
-Access: http://jobvector.local
+# Access backend API locally
 
 ## Scaling
 
@@ -150,28 +159,35 @@ kubectl set image deployment/embeddingservice embeddingservice=embeddingservice:
 **⚠️ IMPORTANT:** Before deploying to production:
 
 1. Update secrets in `backend/secret.yaml`:
-   - Change `DB_PASSWORD`
+   - Change `DB_PASSWORD` to match your AWS RDS password
    - Change `JWT_SECRET` to a strong random string (minimum 256 bits)
 
-2. Consider using Kubernetes Secrets management tools:
-   - Sealed Secrets
-   - External Secrets Operator
+2. Consider using AWS Secrets Manager integration:
+   - AWS Secrets Store CSI Driver
+   - External Secrets Operator with AWS backend
    - HashiCorp Vault
 
-## Storage Classes
+3. Update database connection in `backend/configmap.yaml`:
+   - Ensure RDS endpoint is correct
+   - Verify database name and username
 
-The manifests use `storageClassName: standard`. If your cluster uses a different storage class:
+## Storage
+
+The manifests use `storageClassName: gp2` (default AWS EBS storage). 
 
 ```bash
 # List available storage classes
 kubectl get storageclass
 
-# Update the storageClassName in:
-# - postgres/statefulset.yaml
-# - ollama/statefulset.yaml
-# - backend/pvc-uploads.yaml
-# - backend/pvc-temp.yaml
+# Available storage classes on EKS:
+# - gp2 (General Purpose SSD - default)
+# - gp3 (Newer General Purpose SSD)
+# - io1 (Provisioned IOPS SSD)
 ```
+
+### Storage used by:
+- **Backend**: PVC for uploads/cvs and temp directories (10Gi)
+- **Ollama**: StatefulSet PVC for model storage (20Gi)
 
 ## Troubleshooting
 
@@ -201,11 +217,15 @@ kubectl get storageclass
 ### Database connection issues
 
 ```bash
-# Test PostgreSQL connectivity
-kubectl exec -it deployment/backend -n jobvector -- nc -zv postgres 5432
+# Test RDS connectivity from backend pod
+kubectl exec -it deployment/backend -n jobvector -- nc -zv jobvector-db.cjuy2asg2xaj.eu-west-3.rds.amazonaws.com 5432
 
-# Check PostgreSQL logs
-kubectl logs statefulset/postgres -n jobvector
+# Check backend logs for database errors
+kubectl logs deployment/backend -n jobvector | grep -i "database\|postgres\|sql"
+
+# Verify security group allows EKS to RDS connection
+# - Check RDS security group allows inbound 5432 from EKS cluster
+# - Verify RDS is accessible from VPC
 ```
 
 ### Ollama model not loading
@@ -214,29 +234,60 @@ kubectl logs statefulset/postgres -n jobvector
 # Check Ollama logs
 kubectl logs statefulset/ollama -n jobvector
 
-# Manually pull model
-kubectl exec -it ollama-0 -n jobvector -- ollama pull llama3
+# Manually pull model (phi3:mini is pre-configured)
+kubectl exec -it ollama-0 -n jobvector -- ollama pull phi3:mini
+
+# List installed models
+kubectl exec -it ollama-0 -n jobvector -- ollama list
+```
+
+### LoadBalancer not getting External IP
+
+```bash
+# Check LoadBalancer service status
+kubectl describe svc frontend -n jobvector
+kubectl describe svc backend -n jobvector
+
+# Verify AWS LoadBalancer Controller is installed
+kubectl get deployment -n kube-system aws-load-balancer-controller
+
+# Check controller logs
+kubectl logs -n kube-system deployment/aws-load-balancer-controller
 ```
 
 ## Resource Requirements
 
 | Component | CPU Request | CPU Limit | Memory Request | Memory Limit | Storage |
 |-----------|-------------|-----------|----------------|--------------|---------|
-| PostgreSQL | 500m | 1000m | 512Mi | 1Gi | 10Gi |
-| Ollama | 2000m | 4000m | 4Gi | 8Gi | 10Gi |
-| Backend | 500m | 2000m | 1Gi | 2Gi | 7Gi (uploads+temp) |
+| Ollama | 2000m | 4000m | 4Gi | 8Gi | 20Gi |
+| Backend | 500m | 2000m | 1Gi | 2Gi | 10Gi (uploads) |
 | Frontend | 250m | 500m | 256Mi | 512Mi | - |
 | Embedding | 500m | 2000m | 512Mi | 2Gi | - |
 
 **Total Minimum Requirements:**
 - CPU: ~4 cores
 - Memory: ~8GB RAM
-- Storage: ~30GB persistent storage
+- Storage: ~30GB EBS persistent storage
+- AWS RDS PostgreSQL (managed separately)
+
+**Recommended EKS Node Configuration:**
+- Node Instance Type: t3.xlarge or larger (4 vCPU, 16GB RAM)
+- Minimum Nodes: 2 (for high availability)
+- Storage: gp2 or gp3 EBS volumes
 
 ## Cleanup
 
+### Automated Cleanup
+
 ```bash
-# Delete all resources
+# Run cleanup script (deletes namespace and all resources)
+./cleanup.sh
+```
+
+### Manual Cleanup
+
+```bash
+# Delete all resources (keeps AWS RDS database)
 kubectl delete namespace jobvector
 
 # Or delete individually
@@ -244,38 +295,86 @@ kubectl delete -f frontend/
 kubectl delete -f backend/
 kubectl delete -f ollama/
 kubectl delete -f embedding-service/
-kubectl delete -f postgres/
 kubectl delete -f namespace/
 ```
 
+**Note:** AWS RDS database and LoadBalancers will be managed separately and are not deleted by these commands.
+
 ## Production Considerations
 
-1. **High Availability:**
-   - Increase replicas for backend and frontend
-   - Consider multi-replica PostgreSQL with replication
-   - Use pod anti-affinity rules
+### AWS-Specific Considerations
 
-2. **Monitoring:**
-   - Deploy Prometheus + Grafana
-   - Enable metrics endpoints
-   - Set up alerting
+1. **Database (RDS):**
+   - Use Multi-AZ deployment for high availability
+   - Enable automated backups
+   - Configure Performance Insights
+   - Use appropriate instance size (db.t3.medium or larger)
 
-3. **Security:**
-   - Use network policies
-   - Enable RBAC
-   - Scan images for vulnerabilities
-   - Use private container registry
+2. **Load Balancing:**
+   - AWS ALB is provisioned automatically by services
+   - Configure health checks appropriately
+   - Use AWS ACM for SSL/TLS certificates
+   - Set up Route53 for custom domain
 
-4. **Backup:**
-   - Set up automated PostgreSQL backups
-   - Backup PersistentVolumes regularly
-   - Test restore procedures
+3. **Storage (EBS):**
+   - Use gp3 for better performance and cost
+   - Enable EBS snapshots for backups
+   - Consider using EFS for shared storage needs
 
-5. **Performance:**
-   - Configure resource limits based on load testing
-   - Use HorizontalPodAutoscaler
-   - Optimize database queries
+4. **Networking:**
+   - Ensure EKS cluster and RDS are in same VPC
+   - Configure security groups properly
+   - Use private subnets for database
+   - Public subnets for LoadBalancers
+
+5. **Monitoring:**
+   - Enable CloudWatch Container Insights
+   - Set up CloudWatch alarms
+   - Use AWS X-Ray for tracing
+   - Deploy Prometheus + Grafana for detailed metrics
+
+### High Availability
+
+- Increase replicas for backend and frontend
+- Use pod anti-affinity rules for better distribution
+- Deploy across multiple AZs
+- Use Horizontal Pod Autoscaler (HPA)
+
+### Security
+
+- Use AWS Secrets Manager or Parameter Store for secrets
+- Enable IRSA (IAM Roles for Service Accounts)
+- Use network policies to restrict pod communication
+- Scan container images (AWS ECR scanning)
+- Enable pod security policies/standards
+- Use private ECR registry
+
+### Backup & Disaster Recovery
+
+- Automated RDS backups (point-in-time recovery)
+- EBS volume snapshots
+- Velero for cluster-level backups
+- Test restore procedures regularly
+- Document recovery procedures
+
+### Performance Optimization
+
+- Use AWS-optimized AMIs for EKS nodes
+- Configure appropriate resource requests/limits
+- Enable cluster autoscaler
+- Use Horizontal Pod Autoscaler
+- Optimize database queries and indexes
+- Consider RDS read replicas for read-heavy workloads
+
+## Cost Optimization
+
+1. Use Spot instances for non-critical workloads
+2. Right-size RDS instance based on actual usage
+3. Use gp3 EBS volumes (better cost/performance)
+4. Enable EKS cluster autoscaler to scale down when not needed
+5. Use AWS Savings Plans or Reserved Instances
+6. Monitor and optimize data transfer costs
 
 ## Support
 
-For issues or questions, please refer to the main project documentation.
+For issues or questions:
