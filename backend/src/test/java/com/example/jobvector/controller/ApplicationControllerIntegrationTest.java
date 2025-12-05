@@ -152,7 +152,7 @@ class ApplicationControllerIntegrationTest {
 
         String responseContent = result.getResponse().getContentAsString();
         JsonNode jsonNode = objectMapper.readTree(responseContent);
-        return jsonNode.get("data").get("id").asLong();
+        return jsonNode.get("id").asLong();
     }
 
     private void uploadCvForCandidate() throws Exception {
