@@ -167,7 +167,7 @@ class ApplicationControllerIntegrationTest {
         mockMvc.perform(multipart("/api/candidate/cv/upload")
                         .file(pdfFile)
                         .header("Authorization", "Bearer " + candidateToken))
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted()); // Changed from isOk() to isAccepted() for async processing
     }
 
     @Test
