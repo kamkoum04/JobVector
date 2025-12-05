@@ -161,6 +161,19 @@ class ApplicationControllerIntegrationTest {
         Utilisateur candidate = utilisateurRepository.findByEmail("candidate@test.com")
                 .orElseThrow(() -> new RuntimeException("Candidate not found"));
         
+        // Create a dummy PDF file in the test directory
+        String testCvPath = "test-cv.pdf";
+        java.nio.file.Path cvPath = java.nio.file.Paths.get("temp/test-cvs", testCvPath);
+        java.nio.file.Files.createDirectories(cvPath.getParent());
+        if (!java.nio.file.Files.exists(cvPath)) {
+            String pdfContent = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+                               "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
+                               "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n" +
+                               "xref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n" +
+                               "0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF";
+            java.nio.file.Files.write(cvPath, pdfContent.getBytes());
+        }
+        
         Cv cv = new Cv();
         cv.setUtilisateur(candidate);
         cv.setNom("Test");
@@ -169,7 +182,7 @@ class ApplicationControllerIntegrationTest {
         cv.setTelephone("0123456789");
         cv.setAdresse("Test Address");
         cv.setTexteExtrait("Test CV content");
-        cv.setFichierPath("test/cv.pdf");
+        cv.setFichierPath(testCvPath);
         cv.setEmbedding("mock-embedding-vector");
         
         cvRepository.save(cv);
