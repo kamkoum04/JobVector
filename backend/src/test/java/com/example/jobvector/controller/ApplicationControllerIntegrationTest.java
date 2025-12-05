@@ -169,8 +169,8 @@ class ApplicationControllerIntegrationTest {
         cv.setTelephone("0123456789");
         cv.setAdresse("Test Address");
         cv.setTexteExtrait("Test CV content");
-        cv.setCheminFichier("test/cv.pdf");
-        cv.setVecteurEmbedding("mock-embedding-vector");
+        cv.setFichierPath("test/cv.pdf");
+        cv.setEmbedding("mock-embedding-vector");
         
         cvRepository.save(cv);
     }
