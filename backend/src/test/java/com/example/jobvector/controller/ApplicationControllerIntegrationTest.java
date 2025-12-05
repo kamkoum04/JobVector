@@ -152,6 +152,9 @@ class ApplicationControllerIntegrationTest {
 
         String responseContent = result.getResponse().getContentAsString();
         JsonNode jsonNode = objectMapper.readTree(responseContent);
+        return jsonNode.get("data").get("id").asLong();
+    }
+
     private void uploadCvForCandidate() throws Exception {
         // For tests, directly create CV in database instead of async upload
         // This avoids timing issues with async processing in tests
@@ -170,9 +173,6 @@ class ApplicationControllerIntegrationTest {
         cv.setVecteurEmbedding("mock-embedding-vector");
         
         cvRepository.save(cv);
-    }                   .file(pdfFile)
-                        .header("Authorization", "Bearer " + candidateToken))
-                .andExpect(status().isAccepted()); // Changed from isOk() to isAccepted() for async processing
     }
 
     @Test
