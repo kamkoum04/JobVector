@@ -17,3 +17,13 @@ output "db_name" {
   description = "The name of the database"
   value       = aws_db_instance.jobvector_db.db_name
 }
+
+output "db_identifier" {
+  description = "The identifier of the RDS instance"
+  value       = aws_db_instance.jobvector_db.identifier
+}
+
+output "arn" {
+  description = "The ARN of the RDS instance"
+  value       = aws_db_instance.jobvector_db.arn
+}

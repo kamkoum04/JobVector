@@ -111,6 +111,7 @@ export const candidateApi = {
     })
   },
 
+  getCVJobStatus: (jobId: number) => api.get(`/api/candidate/cv/job/${jobId}`),
   getMyCV: () => api.get("/api/candidate/cv/my-cv"),
   getCVStatus: () => api.get("/api/candidate/cv/status"),
   deleteCV: () => api.delete("/api/candidate/cv"),

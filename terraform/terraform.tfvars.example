@@ -1,0 +1,13 @@
+# JobVector - Production-Ready AWS Infrastructure
+# Database credentials - DO NOT commit to version control
+
+db_username = "jobvector_admin"
+db_password = "CHANGE_ME_SECURE_PASSWORD_HERE"
+
+# Optional: Uncomment to enable HTTPS
+# alb_enable_https = true
+# alb_certificate_arn = "arn:aws:acm:eu-west-3:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+
+# Optional: Disable deletion protection for testing
+# alb_enable_deletion_protection = false
+# skip_final_snapshot = true

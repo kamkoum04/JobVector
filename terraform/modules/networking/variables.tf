@@ -15,21 +15,21 @@ variable "project_name" {
 variable "public_subnet_count" {
   description = "Number of public subnets to create."
   type        = number
-  default     = 2
+  default     = 3
 
 }
 
 variable "private_subnet_count" {
   description = "Number of private subnets to create."
   type        = number
-  default     = 2
+  default     = 3
 
 }
 
 variable "public_subnet_cidr" {
   description = "The CIDR block for public subnets."
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
 
 
 }
@@ -37,20 +37,20 @@ variable "public_subnet_cidr" {
 variable "private_subnet_cidr" {
   description = "The CIDR block for private subnets."
   type        = list(string)
-  default     = ["10.0.3.0/24", "10.0.4.0/24"]
+  default     = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
 }
 
 variable "db_subnet_cidr" {
   description = "The CIDR block for database subnets."
   type        = list(string)
-  default     = ["10.0.5.0/24", "10.0.6.0/24"]
+  default     = ["10.0.20.0/24", "10.0.21.0/24", "10.0.22.0/24"]
 
 }
 
 variable "availabilty_zones" {
   description = "List of availability zones to use."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["eu-west-3a", "eu-west-3b", "eu-west-3c"]
 }
 
 
@@ -70,4 +70,9 @@ variable "tags" {
     Project     = "Job-vector-network"
   }
 
+}
+variable "eks_cluster_security_group_id" {
+  description = "The security group ID of the EKS cluster (for RDS access)"
+  type        = string
+  default     = ""
 }

@@ -2,18 +2,31 @@ package com.example.jobvector.Controller;
 
 import com.example.jobvector.Dto.BaseResponseDto;
 import com.example.jobvector.Dto.CvDto;
+import com.example.jobvector.Dto.CvProcessingJobDto;
+import com.example.jobvector.Model.CvProcessingJob;
 import com.example.jobvector.Model.Utilisateur;
+import com.example.jobvector.Repository.CvProcessingJobRepository;
 import com.example.jobvector.Repository.UtilisateurRepository;
+import com.example.jobvector.Service.AsyncCvProcessingService;
 import com.example.jobvector.Service.CvService;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/candidate/cv")
@@ -27,17 +40,26 @@ public class CvController {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
     
+    @Autowired
+    private CvProcessingJobRepository jobRepository;
+    
+    @Autowired
+    private AsyncCvProcessingService asyncCvProcessingService;
+    
+    @Value("${app.upload.cv.directory}")
+    private String uploadDirectory;
+    
     @GetMapping("/test")
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("CV Controller is working!");
     }
     
     @PostMapping("/upload")
-    public ResponseEntity<BaseResponseDto> uploadCv(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<CvProcessingJobDto> uploadCv(@RequestParam("file") MultipartFile file) {
         try {
             // Vérifier si le fichier est vide
             if (file.isEmpty()) {
-                BaseResponseDto response = new BaseResponseDto();
+                CvProcessingJobDto response = new CvProcessingJobDto();
                 response.setStatusCode(400);
                 response.setMessage("Le fichier est vide");
                 response.setError("EMPTY_FILE");
@@ -47,7 +69,7 @@ public class CvController {
             // Vérifier le type de fichier
             String contentType = file.getContentType();
             if (contentType == null || !contentType.equals("application/pdf")) {
-                BaseResponseDto response = new BaseResponseDto();
+                CvProcessingJobDto response = new CvProcessingJobDto();
                 response.setStatusCode(400);
                 response.setMessage("Seuls les fichiers PDF sont acceptés");
                 response.setError("INVALID_FILE_TYPE");
@@ -57,7 +79,7 @@ public class CvController {
             // Vérifier la taille du fichier (max 10MB)
             long maxSize = 10 * 1024 * 1024; // 10MB en bytes
             if (file.getSize() > maxSize) {
-                BaseResponseDto response = new BaseResponseDto();
+                CvProcessingJobDto response = new CvProcessingJobDto();
                 response.setStatusCode(400);
                 response.setMessage("Le fichier est trop volumineux. Taille maximale autorisée : 10MB");
                 response.setError("FILE_TOO_LARGE");
@@ -67,22 +89,41 @@ public class CvController {
             // Obtenir l'utilisateur connecté
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String email = authentication.getName();
-            
-            // Obtenir l'ID de l'utilisateur depuis l'email
             Long utilisateurId = getUserIdFromEmail(email);
             
-            // Traiter le CV
-            cvService.uploadAndProcessCv(file, utilisateurId);
+            Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
             
-            BaseResponseDto response = new BaseResponseDto();
-            response.setStatusCode(200);
-            response.setMessage("CV uploadé et traité avec succès");
+            // Save file immediately
+            String fileName = saveFile(file);
             
-            return ResponseEntity.ok(response);
+            // Extract text from PDF
+            String texteExtrait = extractTextFromPdf(file);
+            
+            // Create processing job
+            CvProcessingJob job = new CvProcessingJob();
+            job.setUtilisateur(utilisateur);
+            job.setFileName(file.getOriginalFilename());
+            job.setFilePath(fileName);
+            job.setStatus(CvProcessingJob.JobStatus.PENDING);
+            job.setStatusDetails("CV file uploaded, waiting to start processing...");
+            job = jobRepository.save(job);
+            
+            logger.info("Created CV processing job ID: {} for user: {}", job.getId(), email);
+            
+            // Trigger async processing
+            asyncCvProcessingService.processCvAsync(job.getId(), texteExtrait);
+            
+            // Return job ID immediately
+            CvProcessingJobDto response = CvProcessingJobDto.fromEntity(job);
+            response.setStatusCode(202); // Accepted
+            response.setMessage("CV upload initiated. Processing in background.");
+            
+            return ResponseEntity.accepted().body(response);
             
         } catch (RuntimeException e) {
             logger.error("Erreur lors de l'upload du CV: {}", e.getMessage(), e);
-            BaseResponseDto response = new BaseResponseDto();
+            CvProcessingJobDto response = new CvProcessingJobDto();
             
             // Distinguer les différents types d'erreurs
             if (e.getMessage().contains("PDF est invalide") || e.getMessage().contains("corrompu")) {
@@ -103,7 +144,7 @@ public class CvController {
             }
         } catch (Exception e) {
             logger.error("Erreur lors de l'upload du CV: {}", e.getMessage(), e);
-            BaseResponseDto response = new BaseResponseDto();
+            CvProcessingJobDto response = new CvProcessingJobDto();
             response.setStatusCode(500);
             response.setMessage("Erreur lors du traitement du CV");
             response.setError(e.getMessage());
@@ -199,10 +240,72 @@ public class CvController {
         }
     }
     
+    @GetMapping("/job/{jobId}")
+    public ResponseEntity<?> getJobStatus(@PathVariable Long jobId) {
+        try {
+            // Obtenir l'utilisateur connecté
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            Long utilisateurId = getUserIdFromEmail(email);
+            
+            // Vérifier que le job appartient à l'utilisateur
+            CvProcessingJob job = jobRepository.findByIdAndUtilisateurId(jobId, utilisateurId)
+                    .orElseThrow(() -> new RuntimeException("Job non trouvé"));
+            
+            CvProcessingJobDto response = CvProcessingJobDto.fromEntity(job);
+            
+            // Si le job est terminé, inclure les données du CV
+            if (job.getStatus() == CvProcessingJob.JobStatus.COMPLETED && job.getCv() != null) {
+                response.setCvData(cvService.getCvByUtilisateurId(utilisateurId));
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération du statut du job: {}", e.getMessage(), e);
+            BaseResponseDto errorResponse = new BaseResponseDto();
+            errorResponse.setStatusCode(500);
+            errorResponse.setMessage("Erreur lors de la récupération du statut");
+            errorResponse.setError(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
     private Long getUserIdFromEmail(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'email: " + email));
         return utilisateur.getId();
+    }
+    
+    private String saveFile(MultipartFile file) throws IOException {
+        // Créer le répertoire s'il n'existe pas
+        Path uploadPath = Paths.get(uploadDirectory);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        
+        // Générer un nom de fichier unique
+        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(fileName);
+        
+        // Sauvegarder le fichier
+        Files.copy(file.getInputStream(), filePath);
+        
+        return fileName;
+    }
+    
+    private String extractTextFromPdf(MultipartFile file) throws IOException {
+        try (PDDocument document = PDDocument.load(file.getInputStream())) {
+            if (document.isEncrypted()) {
+                throw new RuntimeException("Le fichier PDF est chiffré");
+            }
+            
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document);
+        } catch (IOException e) {
+            logger.error("Erreur lors de l'extraction du texte du PDF: {}", e.getMessage());
+            throw new RuntimeException("Le fichier PDF est invalide ou corrompu", e);
+        }
     }
     
     // Classe interne pour la réponse du statut du CV

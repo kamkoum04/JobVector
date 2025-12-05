@@ -64,6 +64,8 @@ export default function CVUploadPage() {
   const [dragActive, setDragActive] = useState(false)
   const [existingCV, setExistingCV] = useState<CVData | null>(null)
   const [loadingCV, setLoadingCV] = useState(true)
+  const [processingJobId, setProcessingJobId] = useState<number | null>(null)
+  const [processingStatus, setProcessingStatus] = useState<string>("")
 
   // Redirect if not authenticated or not a candidate
   useEffect(() => {
@@ -150,42 +152,88 @@ export default function CVUploadPage() {
     try {
       setUploading(true)
       setError(null)
-      setUploadProgress(0)
-
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + 10
-        })
-      }, 200)
+      setUploadProgress(10)
+      setProcessingStatus("Uploading CV file...")
 
       const response = await candidateApi.uploadCV(file)
-
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-
-      if (response.data) {
-        setSuccess(true)
-        toast.success("CV uploaded and processed successfully!")
-
-        // Wait a moment then check for the updated CV data
-        setTimeout(() => {
-          checkExistingCV()
-          setSuccess(false)
-          setFile(null)
-          setUploadProgress(0)
-        }, 2000)
+      
+      setUploadProgress(20)
+      
+      if (response.data && response.data.jobId) {
+        const jobId = response.data.jobId
+        setProcessingJobId(jobId)
+        setProcessingStatus(response.data.statusDetails || "Processing started...")
+        
+        toast.success("CV uploaded! Processing in background...")
+        
+        // Start polling for job status
+        pollJobStatus(jobId)
       }
     } catch (error: any) {
       setError(error.response?.data?.message || "Failed to upload CV. Please try again.")
       toast.error("Failed to upload CV")
-    } finally {
       setUploading(false)
+      setUploadProgress(0)
     }
+  }
+
+  const pollJobStatus = async (jobId: number) => {
+    const maxPolls = 360 // Poll for up to 12 minutes (360 * 2 seconds)
+    let pollCount = 0
+
+    const pollInterval = setInterval(async () => {
+      try {
+        pollCount++
+        const response = await candidateApi.getCVJobStatus(jobId)
+        const jobData = response.data
+
+        setProcessingStatus(jobData.statusDetails || "Processing...")
+        
+        // Update progress based on status
+        if (jobData.status === "PENDING") {
+          setUploadProgress(25)
+        } else if (jobData.status === "PROCESSING") {
+          // Gradually increase progress during processing
+          setUploadProgress((prev) => Math.min(prev + 2, 90))
+        } else if (jobData.status === "COMPLETED") {
+          setUploadProgress(100)
+          clearInterval(pollInterval)
+          
+          // Job completed successfully
+          setSuccess(true)
+          toast.success("CV processed successfully!")
+          
+          // Wait a moment then refresh CV data
+          setTimeout(() => {
+            checkExistingCV()
+            setSuccess(false)
+            setFile(null)
+            setUploadProgress(0)
+            setUploading(false)
+            setProcessingJobId(null)
+            setProcessingStatus("")
+          }, 2000)
+        } else if (jobData.status === "FAILED") {
+          clearInterval(pollInterval)
+          setError(jobData.errorMessage || "CV processing failed")
+          toast.error("CV processing failed")
+          setUploading(false)
+          setUploadProgress(0)
+          setProcessingJobId(null)
+          setProcessingStatus("")
+        }
+
+        // Stop polling after max attempts
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval)
+          setError("Processing is taking longer than expected. Please check back later.")
+          toast.warning("Processing is taking longer than expected")
+          setUploading(false)
+        }
+      } catch (error) {
+        console.error("Error polling job status:", error)
+      }
+    }, 2000) // Poll every 2 seconds
   }
 
   const removeFile = () => {
@@ -332,12 +380,19 @@ export default function CVUploadPage() {
 
                 {/* Upload Progress */}
                 {uploading && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span>Uploading and processing...</span>
-                      <span>{uploadProgress}%</span>
+                      <span className="font-medium text-blue-700">{processingStatus}</span>
+                      <span className="text-blue-600">{uploadProgress}%</span>
                     </div>
                     <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-gray-600 text-center">
+                      {uploadProgress < 30
+                        ? "Uploading file..."
+                        : uploadProgress < 90
+                          ? "AI is analyzing your CV... This may take up to 10 minutes."
+                          : "Finalizing..."}
+                    </p>
                   </div>
                 )}
 

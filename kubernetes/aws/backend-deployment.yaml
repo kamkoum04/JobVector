@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: jobvector
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /app/uploads/cvs /app/temp/test-cvs
+          chmod -R 777 /app/uploads /app/temp
+          chown -R 1000:1000 /app/uploads /app/temp
+        volumeMounts:
+        - name: backend-uploads
+          mountPath: /app/uploads
+        - name: backend-temp
+          mountPath: /app/temp
+      - name: wait-for-embedding
+        image: curlimages/curl:latest
+        command:
+        - sh
+        - -c
+        - |
+          until curl -f http://embeddingservice:5002/health; do
+            echo "Waiting for Embedding Service..."
+            sleep 2
+          done
+      containers:
+      - name: backend
+        image: kamkoum04/jobvector-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secret
+        volumeMounts:
+        - name: backend-uploads
+          mountPath: /app/uploads
+        - name: backend-temp
+          mountPath: /app/temp
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: backend-uploads
+        persistentVolumeClaim:
+          claimName: backend-uploads-pvc
+      - name: backend-temp
+        persistentVolumeClaim:
+          claimName: backend-temp-pvc

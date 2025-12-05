@@ -1,49 +1,31 @@
 variable "cluster_name" {
   description = "The name of the EKS cluster"
   type        = string
-  default     = "job-vecteur-cluster"
+  default     = "job-vector-cluster"
+}
+
+variable "cluster_version" {
+  description = "Kubernetes version to use for the EKS cluster"
+  type        = string
+  default     = "1.31"
 }
 
 variable "node_group_name" {
   description = "The name of the EKS node group"
   type        = string
-  default     = "job-vecteur-node-group"
+  default     = "job-vector-nodes"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "production"
 }
 
 variable "region" {
   description = "The AWS region to deploy the resources"
   type        = string
-  default     = "us-west-2"
-}
-
-variable "node_instance_type" {
-  description = "EC2 instance type for the EKS worker nodes"
-  type        = string
-  default     = "t3.medium"
-}
-
-variable "desired_size" {
-  description = "The desired number of worker nodes"
-  type        = number
-  default     = 2
-}
-
-variable "desired_capacity" {
-  description = "The desired number of worker nodes"
-  type        = number
-  default     = 2
-}
-
-variable "max_size" {
-  description = "The maximum number of worker nodes"
-  type        = number
-  default     = 3
-}
-
-variable "min_size" {
-  description = "The minimum number of worker nodes"
-  type        = number
-  default     = 1
+  default     = "eu-west-3"
 }
 
 variable "vpc_id" {
@@ -51,7 +33,18 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "The subnet IDs for the EKS cluster"
+variable "cluster_subnet_ids" {
+  description = "The subnet IDs for the EKS cluster control plane (public + private)"
   type        = list(string)
+}
+
+variable "node_subnet_ids" {
+  description = "The subnet IDs for the EKS node groups (private only)"
+  type        = list(string)
+}
+
+variable "cluster_security_group_ids" {
+  description = "Additional security group IDs for the EKS cluster control plane"
+  type        = list(string)
+  default     = []
 }

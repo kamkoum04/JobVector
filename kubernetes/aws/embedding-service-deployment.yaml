@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embeddingservice
+  namespace: jobvector
+  labels:
+    app: embeddingservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: embeddingservice
+  template:
+    metadata:
+      labels:
+        app: embeddingservice
+    spec:
+      containers:
+      - name: embeddingservice
+        image: kamkoum04/jobvector-embeddingservice:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5002
+          name: http
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 3

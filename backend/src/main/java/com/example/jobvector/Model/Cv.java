@@ -95,6 +95,11 @@ public class Cv {
     @JsonIgnore
     private Utilisateur utilisateur;
     
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "processing_job_id", referencedColumnName = "id")
+    @JsonIgnore
+    private CvProcessingJob processingJob;
+    
     @PrePersist
     protected void onCreate() {
         dateCreation = LocalDateTime.now();

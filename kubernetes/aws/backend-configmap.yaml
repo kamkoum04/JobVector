@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: jobvector
+  labels:
+    app: backend
+data:
+  DB_URL: "jdbc:postgresql://jobvector-db.cjuy2asg2xaj.eu-west-3.rds.amazonaws.com:5432/jobvector"
+  DB_USERNAME: "hamza"
+  EMBEDDING_SERVICE_URL: "http://embeddingservice:5002"
+  USE_PYTHON_SERVICE: "true"
+  EMBEDDING_FALLBACK: "true"
+  SPRING_PROFILES_ACTIVE: "embedding"
+  OLLAMA_URL: "http://ollama:11434"
+  OLLAMA_MODEL: "phi3:mini"
+  OLLAMA_TEMP: "0.1"
+  OLLAMA_PREDICT: "2000"
+  CV_UPLOAD_DIR: "uploads/cvs"
