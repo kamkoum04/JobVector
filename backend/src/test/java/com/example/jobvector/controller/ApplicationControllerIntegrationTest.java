@@ -8,7 +8,9 @@ import com.example.jobvector.Dto.UserDto;
 import com.example.jobvector.Model.Application;
 import com.example.jobvector.Model.Cv;
 import com.example.jobvector.Model.JobOffre;
+import com.example.jobvector.Model.Utilisateur;
 import com.example.jobvector.Repository.ApplicationRepository;
+import com.example.jobvector.Repository.CvRepository;
 import com.example.jobvector.Repository.JobOfferRepository;
 import com.example.jobvector.Repository.UtilisateurRepository;
 import com.example.jobvector.Service.OllamaAiCvExtractionService;
@@ -56,6 +58,9 @@ class ApplicationControllerIntegrationTest {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private CvRepository cvRepository;
 
     @MockBean
     private OllamaAiCvExtractionService ollamaAiCvExtractionService;
@@ -147,25 +152,25 @@ class ApplicationControllerIntegrationTest {
 
         String responseContent = result.getResponse().getContentAsString();
         JsonNode jsonNode = objectMapper.readTree(responseContent);
-        return jsonNode.get("id").asLong();
-    }
-
     private void uploadCvForCandidate() throws Exception {
-        String pdfContent = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
-                           "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
-                           "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n" +
-                           "xref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n" +
-                           "0000000115 00000 n\ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF";
-
-        MockMultipartFile pdfFile = new MockMultipartFile(
-                "file",
-                "cv.pdf",
-                "application/pdf",
-                pdfContent.getBytes()
-        );
-
-        mockMvc.perform(multipart("/api/candidate/cv/upload")
-                        .file(pdfFile)
+        // For tests, directly create CV in database instead of async upload
+        // This avoids timing issues with async processing in tests
+        Utilisateur candidate = utilisateurRepository.findByEmail("candidate@test.com")
+                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+        
+        Cv cv = new Cv();
+        cv.setUtilisateur(candidate);
+        cv.setNom("Test");
+        cv.setPrenom("User");
+        cv.setEmail("candidate@test.com");
+        cv.setTelephone("0123456789");
+        cv.setAdresse("Test Address");
+        cv.setTexteExtrait("Test CV content");
+        cv.setCheminFichier("test/cv.pdf");
+        cv.setVecteurEmbedding("mock-embedding-vector");
+        
+        cvRepository.save(cv);
+    }                   .file(pdfFile)
                         .header("Authorization", "Bearer " + candidateToken))
                 .andExpect(status().isAccepted()); // Changed from isOk() to isAccepted() for async processing
     }
