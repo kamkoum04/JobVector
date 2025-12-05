@@ -137,7 +137,7 @@ jobs:
         run: |
           aws eks update-kubeconfig \
             --region ${{ secrets.AWS_REGION }} \
-            --name jobvector-cluster
+            --name job-vector-cluster
 
       - name: Verify cluster connection
         run: |
