@@ -245,3 +245,40 @@ jobs:
         if: always()
         run: |
           kubectl logs -l app=backend -n jobvector --tail=50 || echo "Could not retrieve backend logs"
+
+      - name: 🎉 Deployment Summary - Access URLs
+        if: success()
+        run: |
+          NGINX_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=jobvector-nginx" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+          
+          echo "╔══════════════════════════════════════════════════════════════════╗"
+          echo "║          🚀 JobVector Application Deployed Successfully!         ║"
+          echo "╚══════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "📱 Access Your Application:"
+          echo "├─ 🌐 Frontend:        http://$NGINX_IP"
+          echo "├─ 🔧 Backend API:     http://$NGINX_IP/api"
+          echo "├─ 💚 Health Check:    http://$NGINX_IP/api/actuator/health"
+          echo "└─ 📊 Actuator Info:   http://$NGINX_IP/api/actuator/info"
+          echo ""
+          echo "🔐 Default Admin Credentials:"
+          echo "├─ Email:    admin@jobvector.tn"
+          echo "└─ Password: Admin@123"
+          echo ""
+          echo "🎯 API Endpoints Examples:"
+          echo "├─ Job Offers:         http://$NGINX_IP/api/job-offers"
+          echo "├─ Applications:       http://$NGINX_IP/api/applications"
+          echo "└─ Authentication:     http://$NGINX_IP/api/auth/login"
+          echo ""
+          echo "📦 Deployed Services:"
+          kubectl get pods -n jobvector -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName'
+          echo ""
+          echo "🔗 Quick Links:"
+          echo "├─ GitHub Repo:        https://github.com/${{ github.repository }}"
+          echo "├─ Commit SHA:         ${{ github.sha }}"
+          echo "└─ Deployed By:        ${{ github.actor }}"
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════════"
