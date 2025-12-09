@@ -16,13 +16,6 @@ spec:
       labels:
         app: ollama
     spec:
-      tolerations:
-      - key: "workload"
-        operator: "Equal"
-        value: "ollama"
-        effect: "NoSchedule"
-      nodeSelector:
-        kubernetes.io/hostname: ip-10-0-10-97.eu-west-3.compute.internal
       containers:
       - name: ollama
         image: ollama/ollama:latest

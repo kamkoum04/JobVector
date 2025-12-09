@@ -23,7 +23,23 @@ resource "aws_eks_cluster" "this" {
   }
 }
 
+# EBS CSI Driver Addon
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name             = aws_eks_cluster.this.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = "v1.37.0-eksbuild.1"
+  service_account_role_arn = aws_iam_role.ebs_csi_driver.arn
 
+  depends_on = [
+    aws_eks_node_group.general,
+    aws_iam_role_policy_attachment.ebs_csi_driver_policy
+  ]
+
+  tags = {
+    Name        = "ebs-csi-driver"
+    Environment = var.environment
+  }
+}
 
 resource "aws_eks_node_group" "general" {
   cluster_name    = aws_eks_cluster.this.name
